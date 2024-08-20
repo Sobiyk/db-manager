@@ -8,7 +8,7 @@ class WriteRequest(BaseModel):
 
 
 class ReadRequest(BaseModel):
-    keys: list[str]
+    keys: list[int]
 
 
 class LoginRequest(BaseModel):

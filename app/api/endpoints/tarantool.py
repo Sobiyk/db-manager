@@ -1,6 +1,10 @@
 import asyncio
 from typing import Annotated
-from fastapi import Depends
+
+from asynctnt.exceptions import TarantoolDatabaseError
+from fastapi import Depends, status
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import HTTPException
 from fastapi.routing import APIRouter
 
 from app.api.utils import convert_to_tuple
@@ -18,13 +22,18 @@ async def write_batch(
     current_user: Annotated[User, Depends(get_current_active_user)]
 ):
     data = request.model_dump()
-    tasks = []
-    for key, value in data.get('data').items():
-        obj_in = convert_to_tuple(key, value)
-        tasks.append(conn.insert('tester', obj_in))
-
-    await asyncio.gather(*tasks)
-    return {'status': 'success'}
+    tasks = [
+        conn.insert('tester', convert_to_tuple(key, value)
+                    ) for key, value in data.get('data').items()
+    ]
+    try:
+        await asyncio.gather(*tasks)
+    except TarantoolDatabaseError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Такой ключ уже есть в базе'
+        )
+    return JSONResponse(content={'status': 'success'})
 
 
 @router.post('/read')
@@ -33,10 +42,16 @@ async def read_batch(
     current_user: Annotated[User, Depends(get_current_active_user)]
 ):
     data = request.model_dump()
-    tasks = [conn.select('tester', [int(key)]) for key in data['keys']]
+    tasks = [conn.select('tester', [key]) for key in data['keys']]
     tasks = await asyncio.gather(*tasks)
     result = {'data': {}}
     for response in tasks:
-        key = response.body[0][0]
+        try:
+            key = response.body[0][0]
+        except IndexError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Объект с таким ключом отсутствует в базе'
+            )
         result['data'][key] = [v for v in response.body[0].values()]
-    return result
+    return JSONResponse(content=result)

@@ -13,25 +13,13 @@ services:
       - mynet
     depends_on:
       - tarantool1
-      # - tarantool2
 
   tarantool1:
     build: ./tarantool_infra/
-    environment:
-      TARANTOOL_REPLICATION: "tarantool1,tarantool2"
     networks:
       - mynet
     ports:
       - "3301:3301"
-  
-  tarantool2:
-    build: ./tarantool_infra/
-    environment:
-      TARANTOOL_REPLICATION: "tarantool1,tarantool2"
-    networks:
-      - mynet
-    ports:
-      - "3302:3301"
 
 networks:
   mynet:
