@@ -1,17 +1,14 @@
+from typing import Any
+
 from pydantic import BaseModel
 
 
-class Object(BaseModel):
-    fullname: str
-    year: int
-
-
 class WriteRequest(BaseModel):
-    data: dict[str, Object]
+    data: dict[str, Any]
 
 
 class ReadRequest(BaseModel):
-    keys: list[int]
+    keys: list[str]
 
 
 class LoginRequest(BaseModel):

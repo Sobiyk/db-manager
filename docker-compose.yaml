@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+
+  web:
+    build: ./
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    volumes:
+      - ./:/usr/src/app
+    ports:
+      - 8000:8000
+    networks:
+      - mynet
+    depends_on:
+      - tarantool1
+      # - tarantool2
+
+  tarantool1:
+    build: ./tarantool_infra/
+    environment:
+      TARANTOOL_REPLICATION: "tarantool1,tarantool2"
+    networks:
+      - mynet
+    ports:
+      - "3301:3301"
+  
+  tarantool2:
+    build: ./tarantool_infra/
+    environment:
+      TARANTOOL_REPLICATION: "tarantool1,tarantool2"
+    networks:
+      - mynet
+    ports:
+      - "3302:3301"
+
+networks:
+  mynet:
+    driver: bridge
