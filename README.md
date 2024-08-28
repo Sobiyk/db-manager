@@ -1,4 +1,4 @@
-# VK_test_assigment
+# DB manager
 
 ## Инструкция по запуску
 
